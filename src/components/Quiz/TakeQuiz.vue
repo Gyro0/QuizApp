@@ -1,24 +1,32 @@
 <template>
   <div class="take-quiz">
     <!-- Loading State -->
-    <div v-if="isLoading" class="text-center my-5">
-      <b-spinner variant="primary" label="Loading quiz..."></b-spinner>
-      <p class="mt-2">Loading quiz...</p>
+    <div v-if="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement du quiz...</p>
     </div>
     
     <!-- Error State -->
     <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
     
     <!-- Not Found State -->
-    <div v-else-if="!currentQuiz" class="text-center my-5">
-      <p>Quiz not found.</p>
-      <b-button variant="primary" to="/">Back to Home</b-button>
+    <div v-else-if="!currentQuiz" class="empty-state">
+      <p>Quiz introuvable.</p>
+      <router-link class="btn btn-primary" to="/">Retour à l'accueil</router-link>
     </div>
     
     <!-- Quiz Content -->
     <div v-else>
       <!-- Quiz In Progress -->
       <div v-if="!quizCompleted">
+        <div class="quiz-header">
+          <h2 class="quiz-title">{{ currentQuiz.title }}</h2>
+          <p class="quiz-description">{{ currentQuiz.description }}</p>
+          <QuizTimer
+            ref="timerRef"
+            :duration="currentQuiz.timeLimit * 60"
+          />
+        </div>
         <QuizQuestion
           :question="currentQuestion"
           :questionIndex="currentQuestionIndex"
@@ -113,6 +121,78 @@ export default {
 .take-quiz {
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 2rem 0;
+}
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #eee;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.alert {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+.alert-danger {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.quiz-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+.quiz-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+.quiz-description {
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+.btn {
+  padding: 0.7rem 1.5rem;
+  border-radius: 4px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-primary {
+  background: var(--primary-color, #007bff);
+  color: #fff;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--primary-dark, #0056b3);
+}
+@media (max-width: 600px) {
+  .take-quiz {
+    padding: 1rem 0.2rem;
+  }
+  .quiz-header {
+    margin-bottom: 1rem;
+  }
 }
 </style>

@@ -1,18 +1,17 @@
 <template>
-  <div class="admin-quiz-management">
-    <b-container>
-      <h1 class="mb-4">Quiz Management</h1>
-      
-      <!-- Access Control -->
-      <div v-if="!currentUser || !isAdmin" class="text-center my-5">
-        <b-alert show variant="danger">
-          <h4>Access Denied</h4>
-          <p>You do not have permission to access this page.</p>
-        </b-alert>
-        <b-button variant="primary" to="/">Return to Home</b-button>
+  <div class="admin-quiz-management container">
+    <h1 class="title">Quiz Management</h1>
+
+    <div v-if="!currentUser || !isAdmin" class="access-denied">
+      <div class="alert alert-danger">
+        <h4>Access Denied</h4>
+        <p>You do not have permission to access this page.</p>
       </div>
-      
-      <div v-else>
+      <button class="btn btn-primary" @click="$router.push('/')">Return to Home</button>
+    </div>
+
+    <div v-else>
+      <div class="quiz-list">
         <!-- Header with Action Buttons -->
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h2>All Quizzes</h2>
@@ -95,7 +94,7 @@
         <p>Are you sure you want to delete the quiz <strong>{{ quizToDelete?.title }}</strong>?</p>
         <p class="text-danger">This action cannot be undone and will delete all associated questions.</p>
       </b-modal>
-    </b-container>
+    </div>
   </div>
 </template>
 
@@ -177,3 +176,46 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.access-denied {
+  text-align: center;
+  margin-top: 50px;
+}
+
+.alert {
+  padding: 20px;
+  border: 1px solid #f5c6cb;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.quiz-list {
+  margin-top: 20px;
+}
+</style>

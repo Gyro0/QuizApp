@@ -1,43 +1,49 @@
 <template>
   <div class="quiz-list">
     <!-- Loading state -->
-    <div v-if="isLoading" class="text-center my-5">
-      <b-spinner variant="primary" label="Loading quizzes..."></b-spinner>
-      <p class="mt-2">Loading quizzes...</p>
+    <div v-if="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement des quiz...</p>
     </div>
     
     <!-- Error state -->
-    <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
+    <div v-else-if="error" class="error-state">
+      <p>{{ error }}</p>
+    </div>
     
     <!-- Empty state -->
-    <div v-else-if="quizzes.length === 0" class="text-center my-5">
-      <p>No quizzes available at the moment.</p>
-      <b-button v-if="isAdmin" variant="primary" @click="createNewQuiz">
-        Create New Quiz
-      </b-button>
+    <div v-else-if="quizzes.length === 0" class="empty-state">
+      <p>Aucun quiz disponible pour le moment.</p>
+      <button 
+        v-if="isAdmin" 
+        class="btn btn-primary"
+        @click="createNewQuiz"
+      >
+        Créer un nouveau quiz
+      </button>
     </div>
     
     <!-- Quiz list -->
-    <div v-else>
-      <div class="mb-4 d-flex justify-content-between align-items-center">
-        <h2>Available Quizzes</h2>
-        <b-form-input
-          v-model="searchQuery"
-          placeholder="Search quizzes..."
-          class="w-25"
-        ></b-form-input>
+    <div v-else class="quiz-list-content">
+      <div class="quiz-list-header">
+        <h2>Quiz disponibles</h2>
+        <div class="search-container">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Rechercher un quiz..."
+            class="search-input"
+          >
+        </div>
       </div>
 
-      <b-row>
-        <b-col
+      <div class="quiz-grid">
+        <QuizCard
           v-for="quiz in filteredQuizzes"
           :key="quiz.id"
-          cols="12" md="6" lg="4"
-          class="mb-4"
-        >
-          <QuizCard :quiz="quiz" />
-        </b-col>
-      </b-row>
+          :quiz="quiz"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -99,3 +105,124 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.quiz-list {
+  padding: 2rem;
+}
+
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--secondary-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-state {
+  color: var(--error-color);
+  background-color: var(--error-bg);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.quiz-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.quiz-list-header h2 {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.search-container {
+  position: relative;
+  width: 300px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--secondary-color);
+  border-radius: 0.5rem;
+  background-color: var(--white);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+/* Shopping-like card grid: cards take full line on small, wrap on large */
+.quiz-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.quiz-grid > * {
+  flex: 1 1 350px;
+  min-width: 320px;
+  max-width: 100%;
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .quiz-grid {
+    gap: 1.2rem;
+  }
+  .quiz-grid > * {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .quiz-list {
+    padding: 1rem;
+  }
+
+  .quiz-list-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .search-container {
+    width: 100%;
+  }
+
+  .quiz-grid {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .quiz-grid > * {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+}
+</style>

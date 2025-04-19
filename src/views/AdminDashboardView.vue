@@ -1,93 +1,43 @@
 <template>
-  <div class="admin-dashboard">
-    <b-container>
-      <h1 class="mb-4">Admin Dashboard</h1>
-      
-      <div v-if="!currentUser || !isAdmin" class="text-center my-5">
-        <b-alert show variant="danger">
-          <h4>Access Denied</h4>
-          <p>You do not have permission to access this page.</p>
-        </b-alert>
-        <b-button variant="primary" to="/">Return to Home</b-button>
+  <div class="admin-dashboard container">
+    <h1 class="title">Admin Dashboard</h1>
+
+    <div v-if="!currentUser || !isAdmin" class="access-denied">
+      <div class="alert alert-danger">
+        <h4>Access Denied</h4>
+        <p>You do not have permission to access this page.</p>
       </div>
-      
-      <div v-else>
-        <!-- Stats Summary -->
-        <b-row class="mb-4">
-          <b-col md="6">
-            <b-card bg-variant="primary" text-variant="white" class="text-center">
-              <h2>{{ dashboardData.totalUsers }}</h2>
-              <p class="mb-0">Total Users</p>
-            </b-card>
-          </b-col>
-          <b-col md="6">
-            <b-card bg-variant="success" text-variant="white" class="text-center">
-              <h2>{{ dashboardData.totalQuizzes }}</h2>
-              <p class="mb-0">Total Quizzes</p>
-            </b-card>
-          </b-col>
-        </b-row>
-        
-        <!-- Management Cards -->
-        <b-row>
-          <b-col md="6" class="mb-4">
-            <b-card title="Quiz Management" class="h-100">
-              <b-card-text>
-                Create, edit, and manage quizzes. Add or remove questions and set quiz parameters.
-              </b-card-text>
-              <div class="d-flex flex-wrap">
-                <b-button variant="primary" to="/admin/quizzes" class="mr-2 mb-2">
-                  Manage Quizzes
-                </b-button>
-                <b-button variant="success" to="/admin/quizzes/create" class="mr-2 mb-2">
-                  <i class="fas fa-plus-circle"></i> Create Quiz
-                </b-button>
-                <b-button variant="info" to="/admin/quizzes/import" class="mb-2">
-                  <i class="fas fa-cloud-download-alt"></i> Import Quiz
-                </b-button>
-              </div>
-            </b-card>
-          </b-col>
-          
-          <b-col md="6" class="mb-4">
-            <b-card title="User Management" class="h-100">
-              <b-card-text>
-                View and manage user accounts. Change roles and permissions.
-              </b-card-text>
-              <b-button variant="primary" to="/admin/users">
-                Manage Users
-              </b-button>
-            </b-card>
-          </b-col>
-        </b-row>
-        
-        <!-- Recent Activity -->
-        <b-row>
-          <b-col>
-            <b-card title="Recent Activity">
-              <div v-if="isLoading" class="text-center my-4">
-                <b-spinner variant="primary"></b-spinner>
-              </div>
-              <div v-else-if="dashboardData.recentScores.length === 0" class="text-center py-4">
-                <p class="mb-0 text-muted">No recent quiz attempts yet.</p>
-              </div>
-              <b-table
-                v-else
-                :items="dashboardData.recentScores"
-                :fields="scoreFields"
-                striped
-                hover
-                responsive
-              >
-                <template #cell(timestamp)="data">
-                  {{ formatDate(data.item.timestamp) }}
-                </template>
-              </b-table>
-            </b-card>
-          </b-col>
-        </b-row>
+      <button class="btn btn-primary" @click="$router.push('/')">Return to Home</button>
+    </div>
+
+    <div v-else>
+      <div class="stats-summary">
+        <div class="stat-card">
+          <h2>{{ dashboardData.totalUsers }}</h2>
+          <p>Total Users</p>
+        </div>
+        <div class="stat-card">
+          <h2>{{ dashboardData.totalQuizzes }}</h2>
+          <p>Total Quizzes</p>
+        </div>
       </div>
-    </b-container>
+
+      <div class="management-cards">
+        <div class="card">
+          <h3>Quiz Management</h3>
+          <p>Create, edit, and manage quizzes.</p>
+          <div class="actions">
+            <button class="btn btn-primary" @click="$router.push('/admin/quizzes')">Manage Quizzes</button>
+            <button class="btn btn-success" @click="$router.push('/admin/quizzes/create')">Create Quiz</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>User Management</h3>
+          <p>View and manage user accounts.</p>
+          <button class="btn btn-primary" @click="$router.push('/admin/users')">Manage Users</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -103,7 +53,7 @@ export default {
     const usersFirestore = useFirestore('users');
     const quizzesFirestore = useFirestore('quizzes');
     const scoresFirestore = useFirestore('leaderboard');
-    
+
     const isLoading = ref(true);
     const error = ref(null);
     const dashboardData = ref({
@@ -111,18 +61,18 @@ export default {
       totalQuizzes: 0,
       recentScores: []
     });
-    
+
     const scoreFields = [
       { key: 'displayName', label: 'User' },
       { key: 'quizTitle', label: 'Quiz' },
       { key: 'score', label: 'Score' },
       { key: 'timestamp', label: 'Date' }
     ];
-    
+
     const loadRecentData = async () => {
       isLoading.value = true;
       error.value = null;
-      
+
       try {
         // Get recent scores
         const scores = await scoresFirestore.getItems([
@@ -130,11 +80,11 @@ export default {
           { name: 'limit', value: 10 }
         ]);
         dashboardData.value.recentScores = scores;
-        
+
         // Get total users and quizzes count
         const users = await usersFirestore.getItems();
         const quizzes = await quizzesFirestore.getItems();
-        
+
         dashboardData.value.totalUsers = users.length;
         dashboardData.value.totalQuizzes = quizzes.length;
       } catch (err) {
@@ -144,15 +94,15 @@ export default {
         isLoading.value = false;
       }
     };
-    
+
     const formatDate = (timestamp) => {
       if (!timestamp) return '';
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
       return date.toLocaleDateString();
     };
-    
+
     onMounted(loadRecentData);
-    
+
     return {
       currentUser,
       isAdmin,
@@ -165,3 +115,89 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.access-denied {
+  text-align: center;
+  margin-top: 50px;
+}
+
+.alert {
+  padding: 20px;
+  border: 1px solid #f5c6cb;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.stats-summary {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  flex: 1;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.stat-card h2 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.management-cards {
+  display: flex;
+  gap: 20px;
+}
+
+.card {
+  flex: 1;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+}
+
+.card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.actions {
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: white;
+}
+</style>

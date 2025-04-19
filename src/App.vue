@@ -1,9 +1,9 @@
 <template>
-  <div id="app">
+  <div class="app-container">
     <AppNavbar />
-    <div class="content">
+    <main class="main-content">
       <router-view/>
-    </div>
+    </main>
     <AppFooter />
   </div>
 </template>
@@ -22,19 +22,16 @@ export default {
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
+@import './assets/styles/main.css';
+
+.app-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-.content {
-  padding-top: 70px; /* Adjust for fixed navbar */
-  padding-bottom: 30px;
+.main-content {
   flex: 1;
+  padding: 2rem 0;
 }
 </style>
