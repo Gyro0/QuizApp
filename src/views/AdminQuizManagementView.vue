@@ -69,7 +69,7 @@
                   <router-link :to="{ name: 'quiz-detail', params: { id: quiz.id } }">{{ quiz.title }}</router-link>
                 </td>
                 <td>{{ quiz.category || "Uncategorized" }}</td>
-                <td>{{ quiz.questions ? quiz.questions.length : 0 }}</td>
+                <td>{{ questionCounts[quiz.id] || 0 }}</td>
                 <td>{{ formatDate(quiz.createdAt) }}</td>
                 <td>
                   <div class="table-actions">
@@ -113,6 +113,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '@/composables/useAuth';
 import { useQuiz } from '@/composables/useQuiz';
+import { useFirestore } from '@/composables/useFirestore'; // Add this import
 
 export default {
   name: 'AdminQuizManagementView',
@@ -120,6 +121,7 @@ export default {
     // Composables
     const { currentUser, isAdmin } = useAuth();
     const { fetchQuizzes, quizzes, error, isLoading, deleteQuiz: removeQuiz } = useQuiz();
+    const questionsFirestore = useFirestore('questions'); // Add this line
     
     // State
     const searchQuery = ref('');
@@ -127,6 +129,25 @@ export default {
     const quizToDelete = ref(null);
     const sortKey = ref('title');
     const sortDirection = ref('asc');
+    const questionCounts = ref({}); // Add this line
+    
+    // Fetch question counts for each quiz
+    const fetchQuestionCounts = async () => {
+      try {
+        const counts = {};
+        
+        // Fetch questions for each quiz in parallel
+        await Promise.all(quizzes.value.map(async (quiz) => {
+          const constraints = [{ field: 'quizId', op: '==', value: quiz.id }];
+          const questions = await questionsFirestore.getItems(constraints);
+          counts[quiz.id] = questions.length;
+        }));
+        
+        questionCounts.value = counts;
+      } catch (err) {
+        console.error('Error fetching question counts:', err);
+      }
+    };
     
     // Computed properties
     const filteredQuizzes = computed(() => {
@@ -140,7 +161,7 @@ export default {
       );
     });
     
-    // Sort quizzes based on current sort key and direction
+    // Modified sortedQuizzes to include question counts
     const sortedQuizzes = computed(() => {
       return [...filteredQuizzes.value].sort((a, b) => {
         let aValue = a[sortKey.value];
@@ -148,8 +169,8 @@ export default {
         
         // Handle nested properties like questions.length
         if (sortKey.value === 'questionsCount') {
-          aValue = a.questions ? a.questions.length : 0;
-          bValue = b.questions ? b.questions.length : 0;
+          aValue = questionCounts.value[a.id] || 0;
+          bValue = questionCounts.value[b.id] || 0;
         }
         
         // Handle null/undefined values
@@ -197,6 +218,7 @@ export default {
         await removeQuiz(quizToDelete.value.id);
         showDeleteConfirm.value = false;
         await fetchQuizzes();
+        await fetchQuestionCounts(); // Refresh question counts after deletion
       }
     };
     
@@ -207,7 +229,10 @@ export default {
     };
     
     // Lifecycle hooks
-    onMounted(fetchQuizzes);
+    onMounted(async () => {
+      await fetchQuizzes();
+      await fetchQuestionCounts();
+    });
     
     return {
       currentUser,
@@ -222,7 +247,8 @@ export default {
       sortBy,
       confirmDeleteQuiz,
       deleteQuiz,
-      formatDate
+      formatDate,
+      questionCounts // Include questionCounts in the return object
     };
   }
 };
