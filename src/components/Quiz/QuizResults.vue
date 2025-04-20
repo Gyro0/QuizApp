@@ -1,72 +1,73 @@
 <template>
   <div class="quiz-results">
-    <b-card class="text-center">
+    <div class="results-card">
       <!-- Results Header -->
-      <h2 class="mb-4">Quiz Results</h2>
+      <h2 class="results-title">Quiz Results</h2>
       
       <!-- Score Circle -->
-      <div class="result-summary mb-4">
+      <div class="result-summary">
         <div class="score-circle" :class="scoreClass">
           <div class="score-value">{{ score }} / {{ totalQuestions }}</div>
           <div class="score-percent">{{ scorePercentage }}%</div>
         </div>
-        <h3 class="mt-3">{{ resultMessage }}</h3>
-        <p>{{ timeSpent }}</p>
+        <h3 class="result-message">{{ resultMessage }}</h3>
+        <p class="time-spent">{{ timeSpent }}</p>
       </div>
       
       <!-- Stats Summary -->
-      <b-list-group class="mb-4">
-        <b-list-group-item class="d-flex justify-content-between">
+      <div class="stats-summary">
+        <div class="stat-row">
           <span>Total Questions</span>
-          <b-badge variant="primary">{{ totalQuestions }}</b-badge>
-        </b-list-group-item>
-        <b-list-group-item class="d-flex justify-content-between">
+          <span class="badge badge-primary">{{ totalQuestions }}</span>
+        </div>
+        <div class="stat-row">
           <span>Correct Answers</span>
-          <b-badge variant="success">{{ score }}</b-badge>
-        </b-list-group-item>
-        <b-list-group-item class="d-flex justify-content-between">
+          <span class="badge badge-success">{{ score }}</span>
+        </div>
+        <div class="stat-row">
           <span>Incorrect Answers</span>
-          <b-badge variant="danger">{{ totalQuestions - score }}</b-badge>
-        </b-list-group-item>
-      </b-list-group>
+          <span class="badge badge-danger">{{ totalQuestions - score }}</span>
+        </div>
+      </div>
       
       <!-- Rank Display -->
-      <div v-if="rank" class="leaderboard-info mb-4">
+      <div v-if="rank" class="leaderboard-info">
         <h4>Your Ranking</h4>
         <p>You are ranked #{{ rank.rank }} out of {{ rank.total }} participants</p>
       </div>
       
       <!-- Action Buttons -->
       <div class="actions">
-        <b-button variant="primary" class="mr-2" @click="viewLeaderboard">View Leaderboard</b-button>
-        <b-button variant="success" class="mr-2" @click="retakeQuiz">Retake Quiz</b-button>
-        <b-button variant="outline-secondary" @click="goHome">Back to Home</b-button>
+        <button class="btn btn-primary" @click="viewLeaderboard">View Leaderboard</button>
+        <button class="btn btn-success" @click="retakeQuiz">Retake Quiz</button>
+        <button class="btn btn-secondary" @click="goHome">Back to Home</button>
       </div>
       
       <!-- Question Review (Collapsible) -->
-      <b-button 
-        variant="outline-primary" 
-        block 
-        @click="showAnswers = !showAnswers" 
-        class="my-3"
+      <button 
+        class="btn btn-outline-primary btn-block my-3"
+        @click="showAnswers = !showAnswers"
       >
         {{ showAnswers ? 'Hide' : 'Show' }} Answer Review
-      </b-button>
-      
-      <b-collapse v-model="showAnswers" class="mt-2">
-        <h4 class="mb-3">Question Review</h4>
-        <div v-for="(question, index) in questions" :key="index" class="question-review mb-3">
-          <b-card 
-            :bg="userAnswers[index] === question.correctAnswer ? 'success' : 'danger'"
-            text="white"
-          >
-            <h5>Question {{ index + 1 }}: {{ question.text }}</h5>
-            <p>Your answer: {{ userAnswers[index] || 'Not answered' }}</p>
-            <p>Correct answer: {{ question.correctAnswer }}</p>
-          </b-card>
+      </button>
+      <transition name="fade">
+        <div v-if="showAnswers" class="question-review-list">
+          <h4 class="mb-3">Question Review</h4>
+          <div v-for="(question, index) in questions" :key="index" class="question-review">
+            <div
+              class="review-card"
+              :class="userAnswers[index] === question.correctAnswer ? 'review-success' : 'review-danger'"
+            >
+              <h5>Question {{ index + 1 }}: {{ question.text }}</h5>
+              <p>Your answer: <span :class="userAnswers[index] === question.correctAnswer ? 'text-success' : 'text-danger'">
+                {{ userAnswers[index] || 'Not answered' }}
+              </span></p>
+              <p>Correct answer: <span class="text-success">{{ question.correctAnswer }}</span></p>
+            </div>
+          </div>
         </div>
-      </b-collapse>
-    </b-card>
+      </transition>
+    </div>
   </div>
 </template>
 
@@ -91,17 +92,13 @@ export default {
   setup(props) {
     const router = useRouter();
     const { getUserRank } = useLeaderboard();
-    
-    // UI state
     const showAnswers = ref(false);
     const rank = ref(null);
     const scoreSubmitted = ref(false);
-    
-    // Computed values for score display
+
     const scorePercentage = computed(() => 
       Math.round((props.score / props.totalQuestions) * 100)
     );
-    
     const scoreClass = computed(() => {
       const percent = scorePercentage.value;
       if (percent >= 80) return 'excellent';
@@ -109,7 +106,6 @@ export default {
       if (percent >= 40) return 'average';
       return 'poor';
     });
-    
     const resultMessage = computed(() => {
       const percent = scorePercentage.value;
       if (percent >= 80) return 'Excellent!';
@@ -117,16 +113,11 @@ export default {
       if (percent >= 40) return 'Not bad!';
       return 'Keep practicing!';
     });
-    
+
     // Save score to Firebase
     const saveScore = async () => {
-      // Early return if unable to save
-      if (!props.user?.uid || !props.quizId || scoreSubmitted.value) {
-        return;
-      }
-      
+      if (!props.user?.uid || !props.quizId || scoreSubmitted.value) return;
       try {
-        // Create document with validated data
         const safeData = {
           quizId: String(props.quizId),
           quizTitle: String(props.quizTitle || 'Untitled Quiz'),
@@ -137,39 +128,38 @@ export default {
           timestamp: new Date(),
           createdAt: new Date()
         };
-        
-        // Direct Firebase write
         await db.collection('leaderboard').add(safeData);
         scoreSubmitted.value = true;
-        
-        // Get user's rank after saving score
         try {
           rank.value = await getUserRank(props.quizId, props.user.uid);
         } catch (err) {
-          console.error('Error fetching rank:', err);
+          // silent
         }
       } catch (err) {
-        console.error('Failed to save score:', err);
+        // silent
       }
     };
-    
-    // Save score when user data is available
-    if (props.user?.uid) {
-      saveScore();
-    }
-    
-    // Watch for user becoming defined
+
+    if (props.user?.uid) saveScore();
     watch(() => props.user, (newUser) => {
-      if (newUser?.uid && !scoreSubmitted.value) {
-        saveScore();
-      }
+      if (newUser?.uid && !scoreSubmitted.value) saveScore();
     });
 
-    // Navigation methods
     const viewLeaderboard = () => router.push(`/leaderboard/${props.quizId}`);
-    const retakeQuiz = () => router.push(`/quiz/${props.quizId}`);
+    const retakeQuiz = async () => {
+      try {
+        // First navigate to home, then to quiz to force a fresh start
+        await router.push('/');
+        // Use a slight delay to ensure navigation completes
+        setTimeout(() => {
+          router.push(`/quiz/${props.quizId}`);
+        }, 100);
+      } catch (err) {
+        console.error('Navigation error:', err);
+      }
+    };
     const goHome = () => router.push('/');
-    
+
     return {
       showAnswers,
       rank,
@@ -188,12 +178,24 @@ export default {
 .quiz-results {
   max-width: 800px;
   margin: 0 auto;
+  padding: 2rem 0;
 }
-
+.results-card {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+.results-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
 .result-summary {
-  padding: 20px 0;
+  margin-bottom: 2rem;
 }
-
 .score-circle {
   width: 150px;
   height: 150px;
@@ -202,33 +204,139 @@ export default {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin: 0 auto;
-  color: white;
+  margin: 0 auto 1rem auto;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.2rem;
 }
-
-/* Score circle color classes */
 .score-circle.excellent { background-color: #28a745; }
 .score-circle.good { background-color: #17a2b8; }
-.score-circle.average { 
-  background-color: #ffc107; 
-  color: #212529; 
-}
+.score-circle.average { background-color: #ffc107; color: #212529; }
 .score-circle.poor { background-color: #dc3545; }
-
 .score-value {
-  font-size: 24px;
+  font-size: 2rem;
   font-weight: bold;
 }
-
 .score-percent {
-  font-size: 18px;
+  font-size: 1.2rem;
 }
-
-.question-review {
+.result-message {
+  margin-top: 1rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+.time-spent {
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+.stats-summary {
+  margin: 2rem 0 1.5rem 0;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1.2rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+}
+.badge {
+  display: inline-block;
+  padding: 0.3em 0.9em;
+  font-size: 1em;
+  border-radius: 0.25em;
+  font-weight: 600;
+}
+.badge-primary { background: #007bff; color: #fff; }
+.badge-success { background: #28a745; color: #fff; }
+.badge-danger { background: #dc3545; color: #fff; }
+.leaderboard-info {
+  margin-bottom: 1.5rem;
+  background: #f1f3f5;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+.btn {
+  padding: 0.7rem 1.5rem;
+  border-radius: 4px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 500;
+  outline: none;
+}
+.btn-primary {
+  background: var(--primary-color, #007bff);
+  color: #fff;
+}
+.btn-success {
+  background: #28a745;
+  color: #fff;
+}
+.btn-secondary {
+  background: #6c757d;
+  color: #fff;
+}
+.btn-outline-primary {
+  background: #fff;
+  color: #007bff;
+  border: 1.5px solid #007bff;
+}
+.btn-outline-primary:hover {
+  background: #007bff;
+  color: #fff;
+}
+.btn-block {
+  width: 100%;
+}
+.my-3 {
+  margin-top: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+.question-review-list {
+  margin-top: 1.5rem;
   text-align: left;
 }
-
-.actions {
-  margin-bottom: 20px;
+.question-review {
+  margin-bottom: 1rem;
+}
+.review-card {
+  border-radius: 0.5rem;
+  padding: 1.2rem;
+  color: #fff;
+}
+.review-success {
+  background: #28a745;
+}
+.review-danger {
+  background: #dc3545;
+}
+.text-success { color: #d4edda; }
+.text-danger { color: #f8d7da; }
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+@media (max-width: 600px) {
+  .results-card {
+    padding: 1rem 0.5rem;
+  }
+  .score-circle {
+    width: 110px;
+    height: 110px;
+    font-size: 1rem;
+  }
 }
 </style>

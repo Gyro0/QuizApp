@@ -1,70 +1,38 @@
 <template>
-  <div class="leaderboard">
-    <b-container>
-      <h1 class="mb-4">Leaderboard</h1>
+  <div class="leaderboard container">
+    <h1 class="title">Leaderboard</h1>
 
-      <!-- Loading State -->
-      <div v-if="isLoading" class="text-center my-5">
-        <b-spinner variant="primary" label="Loading leaderboard..."></b-spinner>
-        <p class="mt-2">Loading leaderboard...</p>
-      </div>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="loading-state">
+      <p>Loading leaderboard...</p>
+    </div>
 
-      <!-- Error State -->
-      <div v-else-if="error" class="alert alert-danger" role="alert">
-        {{ error }}
-      </div>
+    <!-- Error State -->
+    <div v-else-if="error" class="alert alert-danger">
+      <p>{{ error }}</p>
+    </div>
 
-      <!-- Content State -->
-      <div v-else>
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2>{{ quizTitle || 'Global Leaderboard' }}</h2>
-          <b-button v-if="quizId" variant="outline-primary" @click="goBack">
-            Back to Quiz
-          </b-button>
-        </div>
-
-        <b-card>
-          <b-table v-if="leaderboard.length > 0" :items="leaderboard" :fields="fields" striped hover responsive>
-            <!-- Rank Column -->
-            <template #cell(rank)="data">
-              <strong>{{ data.index + 1 }}</strong>
-            </template>
-
-            <!-- User Column -->
-            <template #cell(displayName)="data">
-              <div class="d-flex align-items-center">
-                <strong>{{ data.item.displayName }}</strong>
-                <b-badge v-if="data.item.userId === currentUser?.uid" variant="primary" class="ml-2">You</b-badge>
-              </div>
-            </template>
-
-            <!-- Score Column -->
-            <template #cell(score)="data">
-              <b-badge variant="success" pill>{{ data.item.score }}</b-badge>
-            </template>
-
-            <!-- Date Column -->
-            <template #cell(timestamp)="data">
-              {{ formatDate(data.item.timestamp) }}
-            </template>
-          </b-table>
-
-          <!-- User Ranking Box -->
-          <div v-if="userRank" class="mt-4 p-3 bg-light rounded">
-            <h4>Your Ranking</h4>
-            <p class="mb-0">
-              You are ranked <b>#{{ userRank.rank }}</b> out of {{ userRank.total }} participants
-              with a score of <b-badge variant="success">{{ userRank.score }}</b-badge>
-            </p>
-          </div>
-
-          <!-- Empty State -->
-          <div v-if="leaderboard.length === 0" class="text-center my-4">
-            <p>No scores to display yet. Be the first to take this quiz!</p>
-          </div>
-        </b-card>
-      </div>
-    </b-container>
+    <!-- Leaderboard Content -->
+    <div v-else>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>User</th>
+            <th>Score</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(entry, index) in leaderboard" :key="entry.id">
+            <td>{{ index + 1 }}</td>
+            <td>{{ entry.displayName }}</td>
+            <td>{{ entry.score }}</td>
+            <td>{{ formatDate(entry.timestamp) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -169,3 +137,52 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.loading-state {
+  text-align: center;
+  margin-top: 50px;
+}
+
+.alert {
+  padding: 20px;
+  border: 1px solid #f5c6cb;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  border: 1px solid #dee2e6;
+  padding: 10px;
+  text-align: center;
+}
+
+.leaderboard-table th {
+  background-color: #f8f9fa;
+}
+
+.leaderboard-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+</style>

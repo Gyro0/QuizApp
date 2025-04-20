@@ -123,6 +123,18 @@ export function useLeaderboard() {
       return null; // User not found in scores
     }, 'Error getting user rank');
   };
+
+  // Get participant count for a specific quiz
+  const getParticipantCount = async (quizId) => {
+    if (!quizId) return 0;
+    return executeOperation(async () => {
+      const constraints = [{ field: 'quizId', op: '==', value: quizId }];
+      const scores = await getItems(constraints);
+      if (!scores) return 0;
+      const uniqueUserIds = new Set(scores.map(score => score.userId));
+      return uniqueUserIds.size;
+    }, 'Error fetching participant count');
+  };
   
   return {
     leaderboard,
@@ -131,6 +143,7 @@ export function useLeaderboard() {
     fetchLeaderboard,
     fetchUserBestScores,
     addScore,
-    getUserRank
+    getUserRank,
+    getParticipantCount
   };
 }

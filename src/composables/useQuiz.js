@@ -107,17 +107,49 @@ export function useQuiz() {
     // Quiz CRUD operations
     const createQuiz = async (quizData) => {
         return executeOperation(async () => {
-            return await addItem({
-                ...quizData,
+            // Make sure we have a timeLimit
+            if (!quizData.timeLimit) quizData.timeLimit = 10;
+
+            // Prepare the quiz data
+            const quizToSave = {
+                title: quizData.title,
+                description: quizData.description,
+                category: quizData.category,
+                difficulty: quizData.difficulty || '',
+                timeLimit: parseInt(quizData.timeLimit) || 10, // Ensure it's a number
+                passingScore: quizData.passingScore || 60,
+                imageUrl: quizData.imageUrl || '',
                 createdBy: currentUser.value?.uid,
-                createdAt: new Date()
-            });
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                questions: quizData.questions || [],
+                visible: true
+            };
+
+            // Save to Firestore
+            const docRef = await addItem(quizToSave);
+            return { id: docRef.id, ...quizToSave };
         }, "Error creating quiz");
     };
     
     const updateQuiz = async (quizId, quizData) => {
         return executeOperation(async () => {
-            return await updateItem(quizId, quizData);
+            // Make sure we have a timeLimit
+            if (!quizData.timeLimit) quizData.timeLimit = 10;
+
+            const quizToUpdate = {
+                title: quizData.title,
+                description: quizData.description,
+                category: quizData.category,
+                difficulty: quizData.difficulty || '',
+                timeLimit: parseInt(quizData.timeLimit) || 10, // Ensure it's a number
+                passingScore: quizData.passingScore || 60,
+                imageUrl: quizData.imageUrl || '',
+                updatedAt: new Date()
+            };
+
+            await updateItem(quizId, quizToUpdate);
+            return { id: quizId, ...quizToUpdate };
         }, "Error updating quiz");
     };
     

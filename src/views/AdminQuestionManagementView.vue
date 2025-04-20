@@ -1,204 +1,100 @@
 <template>
-  <div class="admin-question-management">
-    <b-container>
-      <h1 class="mb-4">Question Management</h1>
-      
-      <!-- Access Control -->
-      <div v-if="!currentUser || !isAdmin" class="text-center my-5">
-        <b-alert show variant="danger">
-          <h4>Access Denied</h4>
-          <p>You do not have permission to access this page.</p>
-        </b-alert>
-        <b-button variant="primary" to="/">Return to Home</b-button>
+  <div class="admin-question-management container">
+    <h1 class="title">Question Management</h1>
+
+    <div v-if="!currentUser || !isAdmin" class="access-denied">
+      <div class="alert alert-danger">
+        <h4>Access Denied</h4>
+        <p>You do not have permission to access this page.</p>
       </div>
-      
-      <!-- Loading State -->
-      <div v-else-if="isLoading" class="text-center my-5">
-        <b-spinner variant="primary" label="Loading questions..."></b-spinner>
-        <p class="mt-2">Loading questions...</p>
-      </div>
-      
-      <!-- Error State -->
-      <div v-else-if="error" class="alert alert-danger" role="alert">{{ error }}</div>
-      
-      <!-- Content State -->
-      <div v-else>
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h2>{{ quiz?.title || 'Questions' }}</h2>
-            <p v-if="quiz?.description" class="text-muted">{{ quiz.description }}</p>
+      <button class="btn btn-primary" @click="$router.push('/')">Return to Home</button>
+    </div>
+
+    <div v-else>
+      <div class="question-list">
+        <!-- Question list and management UI goes here -->
+        <!-- Loading State -->
+        <div v-if="isLoading" class="text-center my-5">
+          <b-spinner variant="primary" label="Loading questions..."></b-spinner>
+          <p class="mt-2">Loading questions...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div v-else-if="error" class="alert alert-danger" role="alert">{{ error }}</div>
+        
+        <!-- Content State -->
+        <div v-else>
+          <!-- Header -->
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2>{{ quiz?.title || 'Questions' }}</h2>
+              <p v-if="quiz?.description" class="text-muted">{{ quiz.description }}</p>
+            </div>
+            <div>
+              <b-button variant="outline-secondary" class="mr-2" @click="goBack">
+                Back to Quizzes
+              </b-button>
+              <b-button variant="primary" @click="showAddQuestion = true">
+                <i class="fas fa-plus mr-1"></i> Add Question
+              </b-button>
+            </div>
           </div>
-          <div>
-            <b-button variant="outline-secondary" class="mr-2" @click="goBack">
-              Back to Quizzes
+          
+          <!-- Import Questions Button -->
+          <div v-if="quiz" class="mb-4">
+            <b-button variant="success" @click="showImportModal = true">
+              <i class="fas fa-cloud-download-alt mr-1"></i> Import More Questions
             </b-button>
+          </div>
+          
+          <!-- Empty State -->
+          <div v-if="questions.length === 0" class="text-center my-5">
+            <p>No questions yet for this quiz.</p>
             <b-button variant="primary" @click="showAddQuestion = true">
-              <i class="fas fa-plus mr-1"></i> Add Question
+              Add Your First Question
             </b-button>
           </div>
-        </div>
-        
-        <!-- Import Questions Button -->
-        <div v-if="quiz" class="mb-4">
-          <b-button variant="success" @click="showImportModal = true">
-            <i class="fas fa-cloud-download-alt mr-1"></i> Import More Questions
-          </b-button>
-        </div>
-        
-        <!-- Empty State -->
-        <div v-if="questions.length === 0" class="text-center my-5">
-          <p>No questions yet for this quiz.</p>
-          <b-button variant="primary" @click="showAddQuestion = true">
-            Add Your First Question
-          </b-button>
-        </div>
-        
-        <!-- Questions List -->
-        <b-card v-else class="mb-4">
-          <div 
-            v-for="(question, index) in questions" 
-            :key="question.id"
-            class="question-item p-3 mb-3 border rounded"
-          >
-            <div class="d-flex justify-content-between align-items-start">
-              <div class="d-flex">
-                <div class="mr-2 text-muted">{{ index + 1 }}.</div>
-                <div>
-                  <h5>{{ question.text }}</h5>
-                  <b-img v-if="question.imageUrl" :src="question.imageUrl" thumbnail height="80px"></b-img>
-                  
-                  <div class="options mt-2">
-                    <div 
-                      v-for="option in question.options" 
-                      :key="option"
-                      class="option-item"
-                      :class="{ 'correct-answer': option === question.correctAnswer }"
-                    >
-                      {{ option }}
-                      <b-badge v-if="option === question.correctAnswer" variant="success">Correct</b-badge>
+          
+          <!-- Questions List -->
+          <b-card v-else class="mb-4">
+            <div 
+              v-for="(question, index) in questions" 
+              :key="question.id"
+              class="question-item p-3 mb-3 border rounded"
+            >
+              <div class="d-flex justify-content-between align-items-start">
+                <div class="d-flex">
+                  <div class="mr-2 text-muted">{{ index + 1 }}.</div>
+                  <div>
+                    <h5>{{ question.text }}</h5>
+                    <b-img v-if="question.imageUrl" :src="question.imageUrl" thumbnail height="80px"></b-img>
+                    
+                    <div class="options mt-2">
+                      <div 
+                        v-for="option in question.options" 
+                        :key="option"
+                        class="option-item"
+                        :class="{ 'correct-answer': option === question.correctAnswer }"
+                      >
+                        {{ option }}
+                        <b-badge v-if="option === question.correctAnswer" variant="success">Correct</b-badge>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              <div>
-                <b-button-group size="sm">
-                  <b-button variant="outline-primary" @click="editQuestion(question)">Edit</b-button>
-                  <b-button variant="outline-danger" @click="confirmDeleteQuestion(question)">Delete</b-button>
-                </b-button-group>
+                
+                <div>
+                  <b-button-group size="sm">
+                    <b-button variant="outline-primary" @click="editQuestion(question)">Edit</b-button>
+                    <b-button variant="outline-danger" @click="confirmDeleteQuestion(question)">Delete</b-button>
+                  </b-button-group>
+                </div>
               </div>
             </div>
-          </div>
-        </b-card>
+          </b-card>
+        </div>
       </div>
-    </b-container>
-    
-    <!-- Question Form Modal -->
-    <b-modal
-      v-model="showAddQuestion"
-      :title="editingQuestion ? 'Edit Question' : 'Add New Question'"
-      size="lg"
-      @hidden="resetForm"
-      @ok="saveQuestion"
-    >
-      <b-form>
-        <b-form-group label="Question Text" label-for="question-text">
-          <b-form-textarea
-            id="question-text"
-            v-model="questionForm.text"
-            placeholder="Enter the question"
-            required
-            rows="3"
-          ></b-form-textarea>
-        </b-form-group>
-        
-        <b-form-group label="Image URL (Optional)" label-for="question-image">
-          <b-form-input
-            id="question-image"
-            v-model="questionForm.imageUrl"
-            placeholder="Enter image URL"
-          ></b-form-input>
-          <small class="form-text text-muted">Add an image to illustrate the question.</small>
-        </b-form-group>
-        
-        <b-form-group label="Options">
-          <div v-for="(option, index) in questionForm.options" :key="index" class="d-flex mb-2">
-            <b-form-input
-              v-model="questionForm.options[index]"
-              :placeholder="`Option ${index + 1}`"
-              required
-            ></b-form-input>
-            
-            <b-form-radio
-              v-model="questionForm.correctAnswer"
-              :value="option"
-              class="ml-2 d-flex align-items-center"
-            >Correct</b-form-radio>
-            
-            <b-button 
-              v-if="questionForm.options.length > 2"
-              variant="outline-danger" 
-              size="sm"
-              class="ml-2"
-              @click="removeOption(index)"
-            ><i class="fas fa-times"></i></b-button>
-          </div>
-          
-          <b-button variant="outline-secondary" size="sm" class="mt-2" @click="addOption">
-            <i class="fas fa-plus mr-1"></i> Add Option
-          </b-button>
-        </b-form-group>
-      </b-form>
-    </b-modal>
-    
-    <!-- Import Questions Modal -->
-    <b-modal 
-      v-model="showImportModal" 
-      title="Import Questions" 
-      size="lg"
-      @ok="handleImportQuestions"
-    >
-      <b-form>
-        <b-form-group label="Category">
-          <b-form-select v-model="importForm.category" :options="categoryOptions"></b-form-select>
-        </b-form-group>
-        
-        <b-form-group label="Difficulty">
-          <b-form-select v-model="importForm.difficulty" :options="difficultyOptions"></b-form-select>
-        </b-form-group>
-        
-        <b-form-group label="Number of Questions">
-          <b-form-input
-            v-model.number="importForm.amount"
-            type="number"
-            min="1"
-            max="50"
-            required
-          ></b-form-input>
-        </b-form-group>
-      </b-form>
-      
-      <template #modal-footer="{ ok, cancel }">
-        <b-button variant="secondary" @click="cancel()">Cancel</b-button>
-        <b-button variant="primary" @click="ok()" :disabled="isImporting">
-          <b-spinner v-if="isImporting" small class="mr-1"></b-spinner>
-          Import Questions
-        </b-button>
-      </template>
-    </b-modal>
-    
-    <!-- Delete Confirmation Modal -->
-    <b-modal
-      v-model="showDeleteConfirm"
-      title="Confirm Deletion"
-      ok-variant="danger"
-      ok-title="Delete"
-      @ok="deleteQuestion"
-    >
-      <p>Are you sure you want to delete this question?</p>
-      <p class="text-danger">This action cannot be undone.</p>
-    </b-modal>
+    </div>
   </div>
 </template>
 
@@ -461,6 +357,47 @@ export default {
 </script>
 
 <style scoped>
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.access-denied {
+  text-align: center;
+  margin-top: 50px;
+}
+
+.alert {
+  padding: 20px;
+  border: 1px solid #f5c6cb;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.question-list {
+  margin-top: 20px;
+}
+
 .question-item {
   background-color: #f8f9fa;
   transition: background-color 0.2s;

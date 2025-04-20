@@ -14,6 +14,7 @@ import AdminQuizManagementView from '@/views/AdminQuizManagementView.vue';
 import AdminQuestionManagementView from '@/views/AdminQuestionManagementView.vue';
 import AdminImportQuizView from '@/views/AdminImportQuizView.vue';
 import NotFoundView from '@/views/NotFoundView.vue';
+import QuizDetailView from '@/views/QuizDetailView.vue'; // Import the new view
 
 // Define a fallback component for routes that are still in development
 const DevelopmentView = {
@@ -50,7 +51,15 @@ const routes = [
   {
     path: '/quiz/:id',
     name: 'take-quiz',
-    component: TakeQuizView
+    component: TakeQuizView,
+    props: true,
+    meta: { requiresAuth: true } // Assuming taking a quiz requires login
+  },
+  {
+    path: '/quiz/detail/:id', // New route for quiz details
+    name: 'quiz-detail',
+    component: QuizDetailView,
+    props: true // Pass route params as props
   },
   {
     path: '/leaderboard',

@@ -1,147 +1,242 @@
 <template>
   <div class="quiz-form">
-    <!-- Display component-specific errors or errors from the composable -->
-    <b-alert v-if="error" show variant="danger">{{ error }}</b-alert>
+    <form @submit.prevent="handleSubmit">
+      <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-    <b-form @submit.prevent="handleSubmit">
-      <b-form-group label="Quiz Title" label-for="quiz-title">
-        <b-form-input
+      <div class="form-group">
+        <label for="quiz-title">Quiz Title</label>
+        <input
           id="quiz-title"
           v-model="form.title"
+          class="input"
           placeholder="Enter quiz title"
           required
-        ></b-form-input>
-      </b-form-group>
+          :disabled="isLoading"
+        />
+      </div>
 
-      <b-form-group label="Description" label-for="quiz-description">
-        <b-form-textarea
+      <div class="form-group">
+        <label for="quiz-description">Description</label>
+        <textarea
           id="quiz-description"
           v-model="form.description"
-          placeholder="Enter quiz description"
+          class="input"
+          placeholder="Enter a short description"
           rows="3"
-        ></b-form-textarea>
-      </b-form-group>
+          :disabled="isLoading"
+        ></textarea>
+      </div>
 
-      <b-form-group label="Category" label-for="quiz-category">
-        <b-form-input
+      <div class="form-group">
+        <label for="quiz-category">Category</label>
+        <input
           id="quiz-category"
           v-model="form.category"
-          placeholder="Enter quiz category"
-        ></b-form-input>
-      </b-form-group>
-
-      <b-form-group>
-        <b-form-checkbox v-model="form.isPublished">
-          Publish Quiz
-        </b-form-checkbox>
-      </b-form-group>
-
-      <b-form-group>
-        <b-form-checkbox v-model="form.showFeedback">
-          Show Feedback After Each Question
-        </b-form-checkbox>
-      </b-form-group>
-
-      <div class="d-flex justify-content-between">
-        <b-button type="button" variant="outline-secondary" @click="$emit('cancel')">
-          Cancel
-        </b-button>
-        <b-button type="submit" variant="primary" :disabled="isLoading">
-          <b-spinner v-if="isLoading" small class="mr-1"></b-spinner>
-          <!-- Use computed property for button text -->
-          {{ isEditing ? 'Update' : 'Create' }} Quiz
-        </b-button>
+          class="input"
+          placeholder="Enter category"
+          required
+          :disabled="isLoading"
+        />
       </div>
-    </b-form>
+
+      <div class="form-group">
+        <label for="quiz-image">Image URL (optional)</label>
+        <input
+          id="quiz-image"
+          v-model="form.imageUrl"
+          class="input"
+          placeholder="Paste an image URL"
+          :disabled="isLoading"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="quiz-time-limit">Time Limit (minutes)</label>
+        <input
+          id="quiz-time-limit"
+          v-model.number="form.timeLimit"
+          class="input"
+          type="number"
+          min="1"
+          max="120"
+          placeholder="Enter time limit in minutes"
+          required
+          :disabled="isLoading"
+        />
+        <small class="helper-text">Default: 10 minutes</small>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          :disabled="isLoading"
+        >
+          <span v-if="isLoading" class="spinner"></span>
+          {{ isEdit ? 'Update Quiz' : 'Create Quiz' }}
+        </button>
+        <button
+          v-if="showCancel"
+          type="button"
+          class="btn btn-secondary"
+          @click="$emit('cancel')"
+          :disabled="isLoading"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   </div>
 </template>
 
 <script>
-import { ref, reactive, onMounted, computed } from 'vue';
-import { useQuiz } from '@/composables/useQuiz';
+import { ref, watch, computed } from 'vue';
 
 export default {
   name: 'AdminQuizForm',
   props: {
-    quizId: {
-      type: String,
-      default: null
+    quiz: {
+      type: Object,
+      default: () => ({})
+    },
+    isLoading: {
+      type: Boolean,
+      default: false
+    },
+    showCancel: {
+      type: Boolean,
+      default: true
     }
   },
-  emits: ['cancel', 'saved'],
+  emits: ['submit', 'cancel'],
   setup(props, { emit }) {
-    // Use reactive for the form object
-    const form = reactive({
+    const form = ref({
       title: '',
       description: '',
       category: '',
-      isPublished: false,
-      showFeedback: true // Default to true
+      imageUrl: '',
+      timeLimit: 10 // Default to 10 minutes
     });
+    const error = ref('');
 
-    const { createQuiz, updateQuiz, fetchQuiz, error: quizComposableError, isLoading } = useQuiz();
-    const componentError = ref(null); // Local error state for this component
-    const isEditing = computed(() => !!props.quizId); // Check if editing based on quizId prop
+    watch(
+      () => props.quiz,
+      (newQuiz) => {
+        form.value = {
+          title: newQuiz.title || '',
+          description: newQuiz.description || '',
+          category: newQuiz.category || '',
+          imageUrl: newQuiz.imageUrl || '',
+          timeLimit: newQuiz.timeLimit || 10 // Default if not present
+        };
+      },
+      { immediate: true, deep: true }
+    );
 
-    // Fetches quiz data if editing an existing quiz
-    const loadQuizForEdit = async () => {
-      if (!isEditing.value) return; // Exit if not editing
+    const isEdit = computed(() => !!props.quiz && !!props.quiz.id);
 
-      try {
-        const quizData = await fetchQuiz(props.quizId);
-        if (quizData) {
-          // Populate the reactive form with fetched data
-          form.title = quizData.title || '';
-          form.description = quizData.description || '';
-          form.category = quizData.category || '';
-          form.isPublished = quizData.isPublished || false;
-          // Ensure showFeedback defaults to true if undefined
-          form.showFeedback = quizData.showFeedback !== undefined ? quizData.showFeedback : true;
-        } else {
-          componentError.value = 'Quiz not found';
-        }
-      } catch (err) {
-        console.error('Error loading quiz for editing:', err);
-        componentError.value = err.message || 'Failed to load quiz data.';
+    const handleSubmit = () => {
+      error.value = '';
+      if (!form.value.title || !form.value.category) {
+        error.value = 'Title and category are required.';
+        return;
       }
+      
+      // Ensure timeLimit is a number
+      form.value.timeLimit = parseInt(form.value.timeLimit) || 10;
+      
+      emit('submit', { ...form.value });
     };
-
-    // Handles form submission for creating or updating a quiz
-    const handleSubmit = async () => {
-      componentError.value = null; // Reset local error
-
-      try {
-        const payload = { ...form }; // Get current form data
-        let result;
-
-        if (isEditing.value) {
-          result = await updateQuiz(props.quizId, payload);
-        } else {
-          result = await createQuiz(payload);
-        }
-
-        if (result) {
-          emit('saved', result); // Emit success event with result
-        } else {
-          // Use error from composable or a generic message
-          componentError.value = quizComposableError.value || 'Failed to save quiz.';
-        }
-      } catch (err) {
-        console.error('Error during quiz save operation:', err);
-        componentError.value = err.message || 'An unexpected error occurred while saving.';
-      }
-    };
-
-    // Load quiz data when component mounts if in edit mode
-    onMounted(loadQuizForEdit);
 
     return {
       form,
-      error: componentError, // Expose local error state to template
-      isLoading,
-      handleSubmit,
-      isEditing // Expose editing status for template logic
+      error,
+      isEdit,
+      handleSubmit
     };
   }
 };
 </script>
+
+<style scoped>
+.quiz-form {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.form-group {
+  margin-bottom: 1.5rem;
+}
+.input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #fafbfc;
+  transition: border 0.2s;
+}
+.input:focus {
+  border-color: var(--primary-color, #007bff);
+  outline: none;
+}
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.btn {
+  padding: 0.7rem 1.5rem;
+  border-radius: 4px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary {
+  background: var(--primary-color, #007bff);
+  color: #fff;
+}
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: #6c757d;
+  color: #fff;
+}
+.alert {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+.alert-danger {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid #fff;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 0.5em;
+  vertical-align: middle;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.helper-text {
+  display: block;
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+</style>

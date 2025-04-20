@@ -1,23 +1,67 @@
 <template>
-    <div class="register">
-        <b-container>
-            <b-row class="justify-content-center">
-                <b-col cols="12" md="8" lg="6">
-                    <h1 class="text-center mb-4">Register</h1>
-                    <RegisterForm />
-                </b-col>
-            </b-row>
-        </b-container>
+    <div class="auth-page">
+        <div class="container">
+                <RegisterForm />
+        </div>
     </div>
 </template>
 
 <script>
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuth } from '@/composables/useAuth';
 import RegisterForm from '@/components/Auth/RegisterForm.vue';
 
 export default {
     name: 'RegisterView',
     components: {
         RegisterForm
+    },
+    setup() {
+        const { currentUser } = useAuth();
+        const router = useRouter();
+
+        onMounted(() => {
+            if (currentUser.value) {
+                router.push('/');
+            }
+        });
     }
 };
 </script>
+
+<style scoped>
+.auth-page {
+    min-height: calc(100vh - 160px);
+    display: flex;
+    align-items: center;
+    padding: 2rem 0;
+}
+
+.auth-container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+
+.auth-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .auth-page {
+        padding: 1rem;
+    }
+
+    .auth-container {
+        padding: 1.5rem;
+    }
+}
+</style>
