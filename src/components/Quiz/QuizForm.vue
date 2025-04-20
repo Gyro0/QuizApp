@@ -134,7 +134,7 @@ export default {
       description: '',
       category: '',
       difficulty: '',
-      timeLimit: 30,
+      timeLimit: 10, // Default to 10 minutes
       passingScore: 60
     });
 
@@ -142,6 +142,8 @@ export default {
       if (isEditing.value) {
         const quiz = await getQuiz(props.quizId);
         if (quiz) {
+          // Ensure timeLimit has a value when loading existing quiz
+          quiz.timeLimit = quiz.timeLimit || 10;
           Object.assign(form, quiz);
         }
       }
@@ -150,6 +152,9 @@ export default {
     const handleSubmit = async () => {
       isSubmitting.value = true;
       try {
+        // Ensure timeLimit is a number
+        form.timeLimit = parseInt(form.timeLimit) || 10;
+        
         if (isEditing.value) {
           await updateQuiz(props.quizId, form);
         } else {

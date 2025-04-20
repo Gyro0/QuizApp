@@ -146,7 +146,18 @@ export default {
     });
 
     const viewLeaderboard = () => router.push(`/leaderboard/${props.quizId}`);
-    const retakeQuiz = () => router.push(`/quiz/${props.quizId}`);
+    const retakeQuiz = async () => {
+      try {
+        // First navigate to home, then to quiz to force a fresh start
+        await router.push('/');
+        // Use a slight delay to ensure navigation completes
+        setTimeout(() => {
+          router.push(`/quiz/${props.quizId}`);
+        }, 100);
+      } catch (err) {
+        console.error('Navigation error:', err);
+      }
+    };
     const goHome = () => router.push('/');
 
     return {

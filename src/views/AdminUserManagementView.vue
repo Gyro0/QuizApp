@@ -27,12 +27,52 @@
               <td>{{ user.email }}</td>
               <td>{{ user.role }}</td>
               <td>
-                <button class="btn btn-primary btn-sm" @click="editUser(user)">Edit</button>
-                <button class="btn btn-danger btn-sm" @click="deleteUser(user)">Delete</button>
+                <button class="btn btn-primary btn-sm" @click="openEditModal(user)">Edit</button>
+                <button class="btn btn-danger btn-sm" @click="confirmDeleteUser(user)">Delete</button>
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div v-if="showEditModal" class="modal-backdrop">
+      <div class="modal">
+        <h3>Edit User</h3>
+        <div v-if="error" class="alert alert-danger">{{ error }}</div>
+        <div class="form-group">
+          <label>Display Name</label>
+          <input type="text" v-model="editingUser.displayName" class="input">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="text" v-model="editingUser.email" disabled class="input">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select v-model="editingUser.role" class="input">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" @click="showEditModal = false">Cancel</button>
+          <button class="btn btn-primary" @click="saveUser">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete User Modal -->
+    <div v-if="showDeleteModal" class="modal-backdrop">
+      <div class="modal">
+        <h3>Delete User</h3>
+        <p>Are you sure you want to delete the user <strong>{{ userToDelete?.displayName }}</strong>?</p>
+        <p class="text-danger">This action cannot be undone.</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" @click="showDeleteModal = false">Cancel</button>
+          <button class="btn btn-danger" @click="deleteUser">Delete</button>
+        </div>
       </div>
     </div>
   </div>
@@ -49,17 +89,75 @@ export default {
     const { currentUser, isAdmin } = useAuth();
     const usersFirestore = useFirestore('users');
     const users = ref([]);
+    const error = ref('');
+    
+    // Modal states
+    const showEditModal = ref(false);
+    const showDeleteModal = ref(false);
+    const editingUser = ref({});
+    const userToDelete = ref(null);
 
     const fetchUsers = async () => {
-      users.value = await usersFirestore.getItems();
+      try {
+        users.value = await usersFirestore.getItems();
+      } catch (err) {
+        error.value = err.message || 'Failed to load users';
+      }
     };
 
-    const editUser = (user) => {
-      console.log('Edit user:', user);
+    const openEditModal = (user) => {
+      editingUser.value = { ...user }; // Clone the user to avoid direct modification
+      showEditModal.value = true;
     };
 
-    const deleteUser = (user) => {
-      console.log('Delete user:', user);
+    const saveUser = async () => {
+      try {
+        error.value = '';
+        
+        // Validate required fields
+        if (!editingUser.value.displayName || !editingUser.value.role) {
+          error.value = 'Display name and role are required';
+          return;
+        }
+        
+        await usersFirestore.updateItem(editingUser.value.id, {
+          displayName: editingUser.value.displayName,
+          role: editingUser.value.role
+        });
+        
+        // Update user in the local list
+        const index = users.value.findIndex(u => u.id === editingUser.value.id);
+        if (index !== -1) {
+          users.value[index] = { ...users.value[index], ...editingUser.value };
+        }
+        
+        showEditModal.value = false;
+      } catch (err) {
+        error.value = err.message || 'Failed to update user';
+      }
+    };
+
+    const confirmDeleteUser = (user) => {
+      userToDelete.value = user;
+      showDeleteModal.value = true;
+    };
+
+    const deleteUser = async () => {
+      if (!userToDelete.value) return;
+      
+      try {
+        // Prevent deleting your own account
+        if (userToDelete.value.id === currentUser.value.uid) {
+          error.value = "You can't delete your own account";
+          return;
+        }
+        
+        await usersFirestore.deleteItem(userToDelete.value.id);
+        users.value = users.value.filter(u => u.id !== userToDelete.value.id);
+        showDeleteModal.value = false;
+      } catch (err) {
+        error.value = err.message || 'Failed to delete user';
+      }
     };
 
     onMounted(fetchUsers);
@@ -68,8 +166,15 @@ export default {
       currentUser,
       isAdmin,
       users,
-      editUser,
-      deleteUser,
+      error,
+      showEditModal,
+      showDeleteModal,
+      editingUser,
+      userToDelete,
+      openEditModal,
+      saveUser,
+      confirmDeleteUser,
+      deleteUser
     };
   },
 };
@@ -113,9 +218,19 @@ export default {
   color: white;
 }
 
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
 .btn-danger {
   background-color: #dc3545;
   color: white;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 0.875rem;
 }
 
 .user-table {
@@ -137,5 +252,54 @@ export default {
 
 .user-table tr:nth-child(even) {
   background-color: #f2f2f2;
+}
+
+/* Modal styles */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.text-danger {
+  color: #dc3545;
 }
 </style>

@@ -22,10 +22,15 @@
         <div class="quiz-header">
           <h2 class="quiz-title">{{ currentQuiz.title }}</h2>
           <p class="quiz-description">{{ currentQuiz.description }}</p>
-          <QuizTimer
-            ref="timerRef"
-            :duration="currentQuiz.timeLimit * 60"
-          />
+          
+          <!-- Fix QuizTimer by ensuring timeLimit is a valid number -->
+          <div class="quiz-meta">
+            <span class="meta-item">{{ currentQuestions.length }} questions</span>
+            <QuizTimer
+              ref="timerRef"
+              :duration="getValidDuration()"
+            />
+          </div>
         </div>
         <QuizQuestion
           :question="currentQuestion"
@@ -107,11 +112,20 @@ export default {
       }
     );
     
+    // Ensure timeLimit is a valid number
+    const getValidDuration = () => {
+      if (!currentQuiz.value || typeof currentQuiz.value.timeLimit !== 'number') {
+        return 600; // Default 10 minutes in seconds
+      }
+      return Math.max(1, currentQuiz.value.timeLimit) * 60; // Ensure at least 1 minute
+    };
+    
     return {
       currentQuiz, currentQuestions, currentQuestion, currentQuestionIndex,
       userAnswers, isLoading, error, currentScore, totalPossibleScore,
       isQuizCompleted, goToNextQuestion, goToPreviousQuestion,
-      handleAnswerSelected, completeQuiz, quizCompleted, timerRef, safeUser
+      handleAnswerSelected, completeQuiz, quizCompleted, timerRef, safeUser,
+      getValidDuration
     };
   }
 };
@@ -168,6 +182,21 @@ export default {
 .quiz-description {
   color: #6c757d;
   margin-bottom: 1rem;
+}
+.quiz-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+.meta-item {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .btn {
   padding: 0.7rem 1.5rem;

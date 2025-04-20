@@ -50,6 +50,22 @@
         />
       </div>
 
+      <div class="form-group">
+        <label for="quiz-time-limit">Time Limit (minutes)</label>
+        <input
+          id="quiz-time-limit"
+          v-model.number="form.timeLimit"
+          class="input"
+          type="number"
+          min="1"
+          max="120"
+          placeholder="Enter time limit in minutes"
+          required
+          :disabled="isLoading"
+        />
+        <small class="helper-text">Default: 10 minutes</small>
+      </div>
+
       <div class="form-actions">
         <button
           type="submit"
@@ -98,7 +114,8 @@ export default {
       title: '',
       description: '',
       category: '',
-      imageUrl: ''
+      imageUrl: '',
+      timeLimit: 10 // Default to 10 minutes
     });
     const error = ref('');
 
@@ -109,7 +126,8 @@ export default {
           title: newQuiz.title || '',
           description: newQuiz.description || '',
           category: newQuiz.category || '',
-          imageUrl: newQuiz.imageUrl || ''
+          imageUrl: newQuiz.imageUrl || '',
+          timeLimit: newQuiz.timeLimit || 10 // Default if not present
         };
       },
       { immediate: true, deep: true }
@@ -123,6 +141,10 @@ export default {
         error.value = 'Title and category are required.';
         return;
       }
+      
+      // Ensure timeLimit is a number
+      form.value.timeLimit = parseInt(form.value.timeLimit) || 10;
+      
       emit('submit', { ...form.value });
     };
 
@@ -210,5 +232,11 @@ export default {
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+.helper-text {
+  display: block;
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
 }
 </style>

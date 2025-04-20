@@ -18,6 +18,15 @@
         >
           {{ item.name }}
         </router-link>
+        
+        <router-link 
+          v-if="isAdmin"
+          to="/admin/dashboard" 
+          class="nav-link admin-link"
+          :class="{ active: $route.path.startsWith('/admin') }"
+        >
+          Admin Dashboard
+        </router-link>
       </div>
       
       <div class="auth-section desktop-only">
@@ -43,6 +52,15 @@
               >
                 Profil
               </router-link>
+              
+              <router-link 
+                v-if="isAdmin"
+                to="/admin/dashboard" 
+                class="dropdown-item admin-item"
+              >
+                Admin Dashboard
+              </router-link>
+              
               <button 
                 @click="logout"
                 class="dropdown-item"
@@ -96,6 +114,15 @@
           {{ item.name }}
         </router-link>
         
+        <router-link 
+          v-if="isAdmin"
+          to="/admin/dashboard" 
+          class="mobile-nav-link admin-link"
+          :class="{ active: $route.path.startsWith('/admin') }"
+        >
+          Admin Dashboard
+        </router-link>
+        
         <template v-if="currentUser">
           <router-link 
             to="/profile" 
@@ -136,7 +163,7 @@ import { useAuth } from '@/composables/useAuth';
 export default {
   name: 'AppNavbar',
   setup() {
-    const { currentUser, logout } = useAuth();
+    const { currentUser, logout, isAdmin } = useAuth();
     const isMobileMenuOpen = ref(false);
     const isProfileMenuOpen = ref(false);
 
@@ -152,6 +179,7 @@ export default {
       navigationItems,
       isMobileMenuOpen,
       isProfileMenuOpen,
+      isAdmin,
     };
   },
 };
@@ -334,6 +362,25 @@ export default {
 .mobile-nav-link:hover,
 .mobile-nav-link.active {
   background-color: var(--secondary-color);
+}
+
+.admin-link {
+  color: var(--primary-color) !important;
+  font-weight: 700;
+  position: relative;
+}
+
+.admin-link::after {
+  content: '👑';
+  font-size: 0.75rem;
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+}
+
+.admin-item {
+  color: var(--primary-color);
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {

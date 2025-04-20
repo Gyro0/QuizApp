@@ -67,13 +67,13 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="score in userScores" :key="score.quizId">
+                    <tr v-for="score in userScores" :key="score.id">
                       <td>
                         <router-link :to="`/quiz/${score.quizId}`" class="quiz-link">
-                          {{ score.quizTitle }}
+                          {{ score.quizTitle || 'Quiz' }}
                         </router-link>
                       </td>
-                      <td>{{ score.score }}%</td>
+                      <td>{{ formatScore(score) }}</td>
                       <td>{{ formatDate(score.timestamp) }}</td>
                     </tr>
                   </tbody>
@@ -88,7 +88,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 import { useLeaderboard } from '@/composables/useLeaderboard';
@@ -104,12 +104,7 @@ export default {
     const isLoading = ref(false);
     const error = ref(null);
 
-    const fields = [
-      { key: 'quizTitle', label: 'Quiz' },
-      { key: 'score', label: 'Score' },
-      { key: 'timestamp', label: 'Date' }
-    ];
-
+    // Computed properties for statistics
     const userInitials = computed(() => {
       if (!currentUser.value || !currentUser.value.displayName) return '';
 
@@ -119,16 +114,30 @@ export default {
       return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
     });
 
+    // Fixed average score calculation to handle different score formats
     const averageScore = computed(() => {
-      if (!userScores.value.length) return 0;
+      if (!userScores.value || userScores.value.length === 0) return 0;
 
-      const sum = userScores.value.reduce((acc, score) => acc + score.score, 0);
+      // Calculate based on percentage 
+      const sum = userScores.value.reduce((acc, score) => {
+        // Handle different score formats
+        if (typeof score.score === 'number' && typeof score.totalQuestions === 'number') {
+          // Convert to percentage if we have score and total
+          return acc + ((score.score / score.totalQuestions) * 100);
+        } else if (typeof score.score === 'number') {
+          // If just a score, assume it's already a percentage
+          return acc + score.score;
+        }
+        return acc;
+      }, 0);
+
       return Math.round(sum / userScores.value.length);
     });
 
+    // Improved function to load user scores with better error handling
     const loadUserScores = async () => {
       if (!currentUser.value || !currentUser.value.uid) {
-        console.log('Cannot fetch scores - no logged in user');
+        console.warn('Cannot fetch scores - no logged in user');
         return;
       }
 
@@ -138,7 +147,14 @@ export default {
         console.log('Fetching scores for user:', currentUser.value.uid);
         const scores = await fetchUserBestScores(currentUser.value.uid);
         console.log('User scores fetched:', scores);
-        userScores.value = scores;
+        
+        if (!scores || scores.length === 0) {
+          console.log('No scores found for this user');
+        } else {
+          console.log('Sample score format:', JSON.stringify(scores[0]));
+        }
+        
+        userScores.value = scores || [];
       } catch (err) {
         console.error('Error fetching user scores:', err);
         error.value = err.message;
@@ -159,7 +175,25 @@ export default {
       return date.toLocaleDateString();
     };
 
+    // Format score percentage for display
+    const formatScore = (score) => {
+      if (typeof score.score === 'number' && typeof score.totalQuestions === 'number') {
+        return `${Math.round((score.score / score.totalQuestions) * 100)}%`;
+      }
+      return `${score.score}%`;
+    };
+    
+    // Load scores when component mounts
     onMounted(loadUserScores);
+    
+    // Watch for user changes and reload scores
+    watch(() => currentUser.value?.uid, (newUserId) => {
+      if (newUserId) {
+        loadUserScores();
+      } else {
+        userScores.value = [];
+      }
+    });
 
     return {
       currentUser,
@@ -168,9 +202,9 @@ export default {
       error,
       userInitials,
       averageScore,
-      fields,
       handleLogout,
-      formatDate
+      formatDate,
+      formatScore
     };
   }
 };
