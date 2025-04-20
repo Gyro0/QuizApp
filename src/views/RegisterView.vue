@@ -1,10 +1,7 @@
 <template>
     <div class="auth-page">
         <div class="container">
-            <div class="auth-container">
-                <h1 class="auth-title">Inscription</h1>
                 <RegisterForm />
-            </div>
         </div>
     </div>
 </template>
