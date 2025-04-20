@@ -27,14 +27,25 @@
           <h3>Quiz Management</h3>
           <p>Create, edit, and manage quizzes.</p>
           <div class="actions">
-            <button class="btn btn-primary" @click="$router.push('/admin/quizzes')">Manage Quizzes</button>
-            <button class="btn btn-success" @click="$router.push('/admin/quizzes/create')">Create Quiz</button>
+            <button class="btn btn-primary" @click="$router.push('/admin/quizzes')">
+              
+              Manage Quizzes
+            </button>
+            <button class="btn btn-success" @click="$router.push('/admin/quizzes/create')">
+              
+              Create Quiz
+            </button>
           </div>
         </div>
         <div class="card">
           <h3>User Management</h3>
           <p>View and manage user accounts.</p>
-          <button class="btn btn-primary" @click="$router.push('/admin/users')">Manage Users</button>
+          <div class="actions">
+            <button class="btn btn-primary" @click="$router.push('/admin/users')">
+              
+              Manage Users
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -169,35 +180,58 @@ export default {
 
 .card {
   flex: 1;
-  padding: 20px;
-  background-color: #ffffff;
-  border: 1px solid #dee2e6;
-  border-radius: 5px;
+  padding: 32px 28px;
+  background: linear-gradient(90deg, #f8f9fa 80%, #e3f0ff 100%);
+  border-left: 5px solid #007bff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s, transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 18px; /* Space between children */
 }
 
-.card h3 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
+.card:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .actions {
-  margin-top: 20px;
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
 }
 
 .btn {
-  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  font-size: 1.1rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: background 0.2s, transform 0.2s;
 }
 
 .btn-primary {
-  background-color: #007bff;
+  background: linear-gradient(90deg, #007bff 80%, #0056b3 100%);
   color: white;
 }
 
 .btn-success {
-  background-color: #28a745;
+  background: linear-gradient(90deg, #28a745 80%, #218838 100%);
   color: white;
+}
+
+.btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  filter: brightness(1.08);
+}
+
+.material-icons {
+  font-size: 1.3em;
+  vertical-align: middle;
 }
 </style>
