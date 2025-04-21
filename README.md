@@ -16,6 +16,12 @@ npm run serve
 ```
 npm run build
 ```
+### Project COllaborators
+```
+Abderrahim Oussayh
+Oussama Ghiati
+Badr Abaouz
+```
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
