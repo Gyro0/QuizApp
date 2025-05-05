@@ -1,4 +1,10 @@
 # quizzapp
+## Project Collaborators
+```
+Abderrahim Oussayh
+Oussama Ghiati
+Badr Abaouz
+```
 
 ## Project setup
 ```
